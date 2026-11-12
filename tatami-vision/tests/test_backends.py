@@ -211,7 +211,7 @@ class _ResponseError(Exception):
 
 def test_ollama_client_error_fails_fast():
     cl = FakeClient([_ResponseError("model 'x' not found", 404)])
-    with pytest.raises(RuntimeError, match="not found"):
+    with pytest.raises(RuntimeError, match="ollama pull"):
         OllamaClassifier(client=cl, retries=2).classify_block(frames(1))
     assert cl.calls == 1
 

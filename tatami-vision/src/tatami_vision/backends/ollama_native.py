@@ -87,7 +87,7 @@ def ollama_native_model(
             try:
                 resp = client.chat(think=think, **kwargs)
             except Exception as e:  # modelos sin soporte de razonamiento rechazan `think`
-                if "think" not in str(e).lower():
+                if "does not support thinking" not in str(e).lower():
                     raise
                 think_supported = False  # no repetir la petición fallida en cada bloque
                 resp = client.chat(**kwargs)

@@ -287,7 +287,8 @@ class OllamaClassifier(PositionClassifier):
                 break
             except Exception as e:
                 if _is_client_error(e):  # p.ej. 404: modelo no instalado; reintentar no sirve
-                    raise RuntimeError(f"Ollama rechazó la petición ({self.model}): {e}") from e
+                    hint = f" ¿Falta `ollama pull {self.model}`?" if e.status_code == 404 else ""
+                    raise RuntimeError(f"Ollama rechazó la petición ({self.model}): {e}.{hint}") from e
                 last_err = e
                 log.warning("Ollama: bloque t=%s falló (intento %d): %s", frames[0].t, attempt + 1, e)
         log.error("Ollama: bloque t=%s descartado: %s", frames[0].t, last_err)
