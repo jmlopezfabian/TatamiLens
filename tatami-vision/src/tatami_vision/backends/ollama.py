@@ -15,10 +15,12 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from functools import cache
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, create_model
+from pydantic_ai.exceptions import UnexpectedModelBehavior
 
 from ..schema import NEUTRAL_POSITIONS, POSITIONS
 from ..video import SampledFrame, encode_jpeg, tile_frames
@@ -32,6 +34,15 @@ from .base import (
 )
 
 log = logging.getLogger(__name__)
+
+
+def _disable_banner() -> None:
+    import pydantic_ai
+
+    pydantic_ai.BANNER_ENABLED = False  # el CLI/API de TatamiLens controla su salida
+
+
+_disable_banner()
 DEFAULT_MODEL = "qwen3-vl:8b-instruct"
 THINKING_MODELS = ("qwen3-vl:8b",)  # variantes que razonan aunque se pida lo contrario
 
@@ -46,9 +57,19 @@ CODE_CONFIDENCE = 0.7  # la salida compacta no trae confianza; constante para el
 TOKENS_PER_IMAGE = 1100  # cota superior medida (~500 nativo, ~1040 por /v1) para dimensionar
 PROMPT_OVERHEAD_TOKENS = 900  # instrucciones + contexto del bloque anterior
 OUTPUT_TOKENS_PER_FRAME = 12
-OUTPUT_OVERHEAD_TOKENS = 300  # llaves + descripciones de atletas (primer bloque)
+OUTPUT_OVERHEAD_TOKENS = 150  # llaves y comillas del JSON
+ATHLETE_DESC_CHARS = 200  # límite por descripción (primer bloque)
+ATHLETE_OVERHEAD_TOKENS = 2 * ATHLETE_DESC_CHARS // 3  # ~3 caracteres por token, con margen
 
-INSTRUCTIONS = SYSTEM_PROMPT.split("Return exactly")[0] + (
+
+def _compact_instructions(prompt: str) -> str:
+    """SYSTEM_PROMPT sin lo que no aplica a la salida compacta (confianza, descripción por frame)."""
+    prompt = prompt.split("Return exactly")[0]
+    prompt = re.sub(r"- confidence:[^\n]*\n", "", prompt)
+    return prompt.replace(" Describe each athlete concretely so\nanother analyst could tell them apart.", "")
+
+
+INSTRUCTIONS = _compact_instructions(SYSTEM_PROMPT) + (
     "Output format: for each frame return one code 'position:top', e.g. 'mount:A' or "
     "'half_guard:B'; neutral positions (standing, scramble, separated, not_visible) have no "
     "top, e.g. 'standing'. Return exactly one code per frame, in time order."
@@ -61,8 +82,11 @@ def block_output_model(n: int, with_athletes: bool) -> type[BaseModel]:
     Ollama aplica con decodificación restringida por gramática)."""
     fields: dict[str, Any] = {}
     if with_athletes:
-        fields["athlete_A"] = (str, Field(description="Concrete description of athlete A"))
-        fields["athlete_B"] = (str, Field(description="Concrete description of athlete B"))
+        for k in ("A", "B"):
+            fields[f"athlete_{k}"] = (
+                str,
+                Field(max_length=ATHLETE_DESC_CHARS, description=f"Short description of athlete {k}"),
+            )
     fields["frames"] = (list[Code], Field(min_length=n, max_length=n))
     return create_model(f"BlockLabels{n}{'WithAthletes' if with_athletes else ''}", **fields)
 
@@ -80,9 +104,17 @@ def _host() -> str:
     return os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 
 
+def _env_context() -> int:
+    raw = os.environ.get("TATAMI_OLLAMA_CONTEXT", "8192")
+    try:
+        return int(raw)
+    except ValueError:
+        raise ValueError(f"TATAMI_OLLAMA_CONTEXT debe ser un entero, no {raw!r}") from None
+
+
 def max_block_for_context(context_tokens: int, tile: int) -> int:
     """Frames máximos por petición para que prompt + salida quepan en el contexto."""
-    budget = context_tokens - PROMPT_OVERHEAD_TOKENS - OUTPUT_OVERHEAD_TOKENS
+    budget = context_tokens - PROMPT_OVERHEAD_TOKENS - OUTPUT_OVERHEAD_TOKENS - ATHLETE_OVERHEAD_TOKENS
     per_image = TOKENS_PER_IMAGE + tile * OUTPUT_TOKENS_PER_FRAME
     return max(1, budget // per_image) * tile
 
@@ -100,6 +132,8 @@ class OllamaClassifier(PositionClassifier):
         block_size: int | None = None,
         tile: int = 4,
         context_tokens: int | None = None,
+        num_ctx: int | None = None,  # alias de context_tokens (nombre de la opción de Ollama)
+        think: bool = False,
         retries: int = 2,
         temperature: float = 0.1,
         client: Any = None,  # ollama.Client o doble de test
@@ -112,7 +146,7 @@ class OllamaClassifier(PositionClassifier):
         self.tile = tile
         self.retries = retries
         self.temperature = temperature
-        self.context_tokens = context_tokens or int(os.environ.get("TATAMI_OLLAMA_CONTEXT", 8192))
+        self.context_tokens = context_tokens or num_ctx or _env_context()
         limit = max_block_for_context(self.context_tokens, tile)
         wanted = block_size or self.block_size
         if wanted > limit:
@@ -135,19 +169,19 @@ class OllamaClassifier(PositionClassifier):
                 client = ollama.Client(host=host or _host())
             from .ollama_native import ollama_native_model
 
-            agent_model = ollama_native_model(self.model, client, num_ctx=self.context_tokens)
+            agent_model = ollama_native_model(self.model, client, num_ctx=self.context_tokens, think=think)
         self.agent = self._build_agent(agent_model)
 
     def _build_agent(self, agent_model: Any):
-        import pydantic_ai
         from pydantic_ai import Agent, ModelSettings
 
-        pydantic_ai.BANNER_ENABLED = False  # el CLI/API controla su salida
+        # Pydantic AI reintenta las salidas inválidas devolviendo el error al modelo; el bucle de
+        # classify_block solo reintenta fallos de red/servidor.
         return Agent(
             agent_model,
             instructions=INSTRUCTIONS,
             model_settings=ModelSettings(temperature=self.temperature),
-            retries=1,
+            retries=self.retries,
         )
 
     @classmethod
@@ -169,7 +203,12 @@ class OllamaClassifier(PositionClassifier):
         from pydantic_ai import BinaryContent
 
         lines = []
-        if athletes:
+        if not athletes:
+            lines.append(
+                "Describe each athlete concretely (shorts, rashguard, hair, build, socks...) so "
+                "another analyst could tell them apart; call them A and B from now on."
+            )
+        else:
             lines.append(
                 "This is a continuation of the same match. Keep the same identities:\n"
                 f"Athlete A: {athletes.get('A', '')}\nAthlete B: {athletes.get('B', '')}"
@@ -220,7 +259,10 @@ class OllamaClassifier(PositionClassifier):
         out_model = block_output_model(n, athletes is None)
         prompt = self._prompt(frames, athletes, prev_labels)
         # Tope de salida: si el modelo se desboca (p.ej. razonando) se corta en vez de tardar minutos.
-        settings = ModelSettings(max_tokens=OUTPUT_TOKENS_PER_FRAME * n + OUTPUT_OVERHEAD_TOKENS)
+        max_tokens = OUTPUT_TOKENS_PER_FRAME * n + OUTPUT_OVERHEAD_TOKENS
+        if athletes is None:
+            max_tokens += ATHLETE_OVERHEAD_TOKENS
+        settings = ModelSettings(max_tokens=max_tokens)
         last_err: Exception | None = None
         for attempt in range(self.retries + 1):
             try:
@@ -234,6 +276,9 @@ class OllamaClassifier(PositionClassifier):
                 if getattr(out, "athlete_A", None) or getattr(out, "athlete_B", None):
                     desc = {"A": out.athlete_A, "B": out.athlete_B}
                 return BlockResult(labels, desc)
+            except UnexpectedModelBehavior as e:  # salida inválida tras los reintentos del Agent
+                last_err = e
+                break
             except Exception as e:
                 last_err = e
                 log.warning("Ollama: bloque t=%s falló (intento %d): %s", frames[0].t, attempt + 1, e)

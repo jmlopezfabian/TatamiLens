@@ -64,7 +64,7 @@ list_backends()  # [{"name","models","available","default_model","detail"}]
 
 Opciones extra de `analyze_video`: `crop=False`, `tile=4` (ollama; 1 = un frame por imagen), `smooth=True`, `smooth_window=5`, `block_size=None`,
 `pose_model="yolo11m-pose.pt"`, y los kwargs del backend (`host`, `retries`, `temperature`,
-`num_ctx`, ...). `rescore` aplica los intervalos (`end` exclusivo) sobre los frames (confianza 1.0
+`context_tokens` o su alias `num_ctx` (default `$TATAMI_OLLAMA_CONTEXT` u 8192), `think`, ...). `rescore` aplica los intervalos (`end` exclusivo) sobre los frames (confianza 1.0
 si `source="human"`); los frames fuera de todo intervalo conservan su etiqueta.
 
 ## Backends

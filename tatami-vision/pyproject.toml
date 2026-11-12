@@ -15,7 +15,7 @@ dependencies = [
     "ollama>=0.6.3",
     "opencv-python-headless>=5.0.0.93",
     "pydantic>=2.14.3",
-    "pydantic-ai-slim[openai]>=2.68.0",
+    "pydantic-ai-slim>=2.68.0",
     "typer>=0.29.1",
     "ultralytics>=8.4.211",
 ]

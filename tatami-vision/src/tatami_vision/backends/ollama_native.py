@@ -58,8 +58,12 @@ def ollama_native_model(
     *,
     num_ctx: int = 8192,
     keep_alive: str = "30m",
+    think: bool | None = False,
 ) -> FunctionModel:
-    """`client` es un `ollama.Client` (o un doble de test con el mismo `chat(**kw)`)."""
+    """`client` es un `ollama.Client` (o un doble de test con el mismo `chat(**kw)`).
+
+    `think=False` se envía siempre (los modelos híbridos lo respetan; las variantes Thinking como
+    `qwen3-vl:8b` lo ignoran y el backend lo detecta por `ThinkingPart`)."""
 
     def chat(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         settings: dict = dict(info.model_settings or {})
@@ -69,13 +73,19 @@ def ollama_native_model(
             options["temperature"] = settings["temperature"]
         if settings.get("max_tokens") is not None:
             options["num_predict"] = settings["max_tokens"]
-        resp = client.chat(
+        kwargs = dict(
             model=model,
             messages=to_ollama_messages(messages, info.instructions),
             format=params.output_object.json_schema if params.output_object else None,
             options=options,
             keep_alive=keep_alive,
         )
+        try:
+            resp = client.chat(think=think, **kwargs)
+        except Exception as e:  # modelos sin soporte de razonamiento rechazan `think`
+            if think is None or "think" not in str(e).lower():
+                raise
+            resp = client.chat(**kwargs)
         message = resp["message"] if isinstance(resp, dict) else resp.message
         get = message.get if isinstance(message, dict) else lambda k: getattr(message, k, None)
         parts: list = []

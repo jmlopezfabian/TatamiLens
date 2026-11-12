@@ -12,6 +12,13 @@ from .api import analyze_video, list_backends
 from .render import render_video
 from .schema import analysis_result_json_schema, label_file_json_schema
 
+
+def _check_tile(v: int | None) -> int | None:
+    if v is not None and v not in (1, 2, 4):
+        raise typer.BadParameter("debe ser 1, 2 o 4")
+    return v
+
+
 app = typer.Typer(help="TatamiLens: análisis de videos de BJJ.", no_args_is_help=True)
 
 
@@ -28,7 +35,9 @@ def analyze(
     block_size: int | None = typer.Option(None, help="Frames por request al backend"),
     pose_model: str = typer.Option("yolo11m-pose.pt", help="Pesos YOLO-pose para --crop"),
     tile: int | None = typer.Option(
-        None, help="ollama: frames por imagen (4 = mosaico 2x2, default; 1 = sin mosaico)"
+        None,
+        help="ollama: frames por imagen (4 = mosaico 2x2, default; 2; 1 = sin mosaico)",
+        callback=lambda v: _check_tile(v),
     ),
     verbose: bool = typer.Option(False, "-v"),
 ) -> None:
