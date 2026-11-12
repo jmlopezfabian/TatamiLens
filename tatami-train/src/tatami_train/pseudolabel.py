@@ -26,7 +26,7 @@ def pseudolabel_video(
     video: str | Path | None,
     out_dir: str | Path,
     backend: str = "ollama",
-    model: str | None = "qwen3-vl:8b",
+    model: str | None = "qwen3-vl:8b-instruct",
     sample_fps: float = 2.0,
     from_result: str | Path | None = None,
 ) -> LabelFile:

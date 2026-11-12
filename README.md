@@ -18,7 +18,7 @@ línea de tiempo del combate y marcador con reglas IBJJF.
 ## Arranque rápido
 
 Requisitos: macOS/Linux, Python 3.12 + [uv](https://docs.astral.sh/uv/), Node 20+,
-[Ollama](https://ollama.com) con `ollama pull qwen3-vl:8b`.
+[Ollama](https://ollama.com) con `ollama pull qwen3-vl:8b-instruct`.
 
 ```bash
 # API (puerto 8000)

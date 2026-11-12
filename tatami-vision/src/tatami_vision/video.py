@@ -79,3 +79,25 @@ def encode_jpeg(img: np.ndarray, width: int | None = 960, quality: int = 85) -> 
 
 def encode_jpeg_b64(img: np.ndarray, width: int | None = 960, quality: int = 85) -> str:
     return base64.standard_b64encode(encode_jpeg(img, width, quality)).decode()
+
+
+def tile_frames(images: list[np.ndarray], cols: int = 2, cell_width: int = 640) -> np.ndarray:
+    """Une varios frames en un mosaico (filas de `cols`, izquierda→derecha, arriba→abajo).
+
+    Cada celda lleva su número (1..n) en la esquina superior izquierda; las celdas sobrantes
+    quedan en negro. Un mosaico 2x2 de 640 px cuesta lo mismo que un frame suelto en un VLM
+    con resolución mínima (Qwen3-VL en Ollama), así que procesa 4 frames por el precio de 1.
+    """
+    if not images:
+        raise ValueError("tile_frames necesita al menos una imagen")
+    h0, w0 = images[0].shape[:2]
+    cell_h = max(1, int(round(h0 * cell_width / w0)))
+    rows = -(-len(images) // cols)
+    canvas = np.zeros((rows * cell_h, cols * cell_width, 3), np.uint8)
+    for k, img in enumerate(images):
+        r, c = divmod(k, cols)
+        cell = cv2.resize(img, (cell_width, cell_h), interpolation=cv2.INTER_AREA)
+        cv2.rectangle(cell, (0, 0), (60, 44), (0, 0, 0), -1)
+        cv2.putText(cell, str(k + 1), (12, 36), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 3)
+        canvas[r * cell_h : (r + 1) * cell_h, c * cell_width : (c + 1) * cell_width] = cell
+    return canvas

@@ -27,6 +27,9 @@ def analyze(
     smooth: bool = typer.Option(True, "--smooth/--no-smooth"),
     block_size: int | None = typer.Option(None, help="Frames por request al backend"),
     pose_model: str = typer.Option("yolo11m-pose.pt", help="Pesos YOLO-pose para --crop"),
+    tile: int | None = typer.Option(
+        None, help="ollama: frames por imagen (4 = mosaico 2x2, default; 1 = sin mosaico)"
+    ),
     verbose: bool = typer.Option(False, "-v"),
 ) -> None:
     """Analiza VIDEO y guarda result.json (y opcionalmente labeled.mp4)."""
@@ -37,9 +40,10 @@ def analyze(
     def progress(p: float) -> None:
         typer.echo(f"\rProgreso: {p * 100:5.1f}%", nl=False, err=True)
 
+    extra = {"tile": tile} if tile is not None else {}
     result = analyze_video(
         video, backend=backend, model=model, sample_fps=fps, progress_cb=progress,
-        crop=crop, smooth=smooth, block_size=block_size, pose_model=pose_model,
+        crop=crop, smooth=smooth, block_size=block_size, pose_model=pose_model, **extra,
     )  # fmt: skip
     typer.echo("", err=True)
     (out / "result.json").write_text(json.dumps(result, indent=2, ensure_ascii=False))
