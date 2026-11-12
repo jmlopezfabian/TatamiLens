@@ -125,3 +125,7 @@ tests/             datos sintéticos (cv2/numpy) y embeddings falsos
 
 Pendiente / ideas: recorte de la zona de combate antes de embeber, modelos con contexto temporal
 (ventanas de embeddings), suavizado de predicciones (HMM/mediana) en tatami-vision.
+
+## Licencia
+
+AGPL-3.0 (ver `LICENSE`). Usa/depende de Ultralytics YOLO, que es AGPL-3.0.

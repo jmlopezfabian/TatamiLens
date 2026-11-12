@@ -1,5 +1,7 @@
 [project]
 name = "tatami-train"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
 version = "0.1.0"
 description = "Datasets, etiquetado y entrenamiento para clasificar posiciones de BJJ (TatamiLens)"
 readme = "README.md"
