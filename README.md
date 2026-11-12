@@ -95,3 +95,7 @@ uv run ruff check
 - Cámara en mano, público y árbitro degradan la clasificación; `--crop` ayuda pero no es perfecto.
 - Muestreo a 2 fps: transiciones rápidas pueden perderse.
 - Probado en macOS Apple Silicon (MPS); sin CUDA.
+
+## Licencia
+
+AGPL-3.0 (ver `LICENSE`). Usa/depende de Ultralytics YOLO, que es AGPL-3.0.

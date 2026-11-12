@@ -1,5 +1,7 @@
 [project]
 name = "tatami-vision"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
 version = "0.1.0"
 description = "Análisis de videos de BJJ: posiciones, marcador IBJJF y CLI (TatamiLens)"
 readme = "README.md"
