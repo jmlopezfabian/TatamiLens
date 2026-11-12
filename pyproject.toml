@@ -10,10 +10,8 @@ dependencies = [
     "python-multipart>=0.0.9",
     "pydantic-settings>=2.4",
     "opencv-python-headless>=4.9",
+    "tatami-vision",
 ]
-
-# Cuando exista ../tatami-vision, instalar con:  uv add --editable ../tatami-vision
-# (ver README). Se deja fuera de dependencies para que `uv sync` funcione sin él.
 
 [project.scripts]
 tatami-api = "tatami_api.main:run"
@@ -37,3 +35,6 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.uv.sources]
+tatami-vision = { path = "../tatami-vision", editable = true }

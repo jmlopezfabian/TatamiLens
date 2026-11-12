@@ -117,3 +117,44 @@ def test_delete(client, video, tmp_path):
 def test_cors(client):
     r = client.get("/api/health", headers={"Origin": "http://localhost:5173"})
     assert r.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_uses_real_tatami_vision_when_installed():
+    import importlib.util
+
+    from tatami_api import vision
+
+    assert vision.USING_REAL_VISION == (importlib.util.find_spec("tatami_vision") is not None)
+
+
+def test_backends_propagate_extra_fields(client):
+    from tatami_api import vision
+
+    items = {b["name"]: b for b in client.get("/api/backends").json()}
+    assert items["mock"]["available"] is True
+    if vision.USING_REAL_VISION:
+        assert set(items) == {"ollama", "anthropic", "local", "mock"}
+        assert "default_model" in items["mock"] and "detail" in items["mock"]
+        assert items["ollama"]["default_model"] == "qwen3-vl:8b"
+
+
+def test_rescore_with_real_or_fallback(client, video):
+    a = client.post(f"/api/videos/{video['id']}/analyses", json=MOCK).json()
+    wait_done(client, a["id"])
+    labels = {"video": "clip.mp4", "athletes": {"A": "x", "B": "y"},
+              "intervals": [{"start": 0, "end": 10, "position": "mount", "top": "B",
+                             "source": "human"}]}  # fmt: skip
+    assert client.put(f"/api/videos/{video['id']}/labels", json=labels).status_code == 200
+    r = client.post(f"/api/analyses/{a['id']}/rescore")
+    assert r.status_code == 200
+    assert {s["position"] for s in r.json()["segments"]} == {"mount"}
+    assert r.json()["score"]["A"] == 0
+
+
+def test_fallback_without_tatami_vision(monkeypatch, tmp_path):
+    from tatami_api import vision
+
+    monkeypatch.setattr(vision, "_tv", None)
+    assert any(b["name"] == "mock" for b in vision.list_backends())
+    res = vision.analyze_video(tmp_path / "nofile.mp4", backend="mock", model="mock")
+    assert res["schema_version"] == "1" and res["frames"]

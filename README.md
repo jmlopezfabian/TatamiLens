@@ -40,8 +40,8 @@ inválidas (`top` debe ser `none` en standing/scramble/separated/not_visible).
 ## Conexión con otros repos
 
 - **tatami-web**: apuntar a `http://localhost:8000/api`; el `<video src>` usa `/api/videos/{id}/stream`.
-- **tatami-vision**: `src/tatami_api/vision.py` importa `tatami_vision` (`analyze_video`, `rescore`,
-  `list_backends`). Si no está instalado, o no expone esa interfaz, usa un mock interno determinista
-  (backend `mock` solamente disponible). Para usar el real:
-  `uv add --editable ../tatami-vision` (en pyproject quedará como path dependency).
+- **tatami-vision**: path dependency editable (`../tatami-vision`). `src/tatami_api/vision.py` lo importa
+  (`analyze_video`, `rescore`, `list_backends`); `/api/backends` propaga también `default_model` y `detail`.
+  Si no está instalado, usa un mock interno determinista (sólo backend `mock`). Los tests corren contra el
+  `mock` de tatami-vision (nunca ollama/anthropic).
 - **tatami-train**: descargar `labels/export` y usarlo como dataset por intervalos.

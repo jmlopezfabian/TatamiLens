@@ -125,6 +125,8 @@ class BackendInfo(BaseModel):
     name: str
     models: list[str]
     available: bool
+    default_model: str | None = None  # los aporta tatami-vision; ausentes en el fallback
+    detail: str = ""
 
 
 class Health(BaseModel):
