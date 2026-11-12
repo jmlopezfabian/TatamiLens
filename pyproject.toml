@@ -1,0 +1,55 @@
+[project]
+name = "tatami-vision"
+version = "0.1.0"
+description = "Análisis de videos de BJJ: posiciones, marcador IBJJF y CLI (TatamiLens)"
+readme = "README.md"
+authors = [
+    { name = "jmlopezfabian", email = "jmlopezfabian@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "joblib>=1.6.0",
+    "numpy>=2.5.4",
+    "ollama>=0.6.3",
+    "opencv-python-headless>=5.0.0.93",
+    "pydantic>=2.14.3",
+    "typer>=0.29.1",
+    "ultralytics>=8.4.211",
+]
+
+[project.optional-dependencies]
+anthropic = [
+    "anthropic>=2.8.0",
+]
+local = [
+    "pillow>=13.0.0",
+    "scikit-learn>=1.9.1",
+    "torch>=2.15.0",
+    "transformers>=5.22.2",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.4",
+]
+
+[project.scripts]
+tatami = "tatami_vision.cli:app"
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+"src/tatami_vision/cli.py" = ["B008"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
