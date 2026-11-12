@@ -1,10 +1,6 @@
 """Export para el backend `local` de tatami-vision y loader de referencia.
 
-Formato del directorio exportado:
-    model.joblib   dict {"position": <Pipeline sklearn>, "top": <Pipeline|None>,
-                         "top_side": <Pipeline|None>}  (cada uno con predict_proba / classes_)
-    meta.json      {"backbone", "labels", "sample_fps", "created_at", "model_kind",
-                    "top_labels", "format_version"}
+Formato del artefacto: ver docs/CONTRACTS.md, sección "Artefacto de modelo local".
 """
 
 from __future__ import annotations
@@ -17,6 +13,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 
+from .embed import pooling_for
 from .labels import NO_TOP_POSITIONS
 
 FORMAT_VERSION = 1
@@ -34,6 +31,7 @@ def export_model(run_dir: str | Path, out_dir: str | Path, kind: str = "logreg")
     meta = {
         "format_version": FORMAT_VERSION,
         "backbone": info["backbone"],
+        "pooling": pooling_for(info["backbone"]),
         "labels": info["targets"]["position"]["models"][kind]["labels"],
         "top_labels": (
             info["targets"]["top"]["models"][kind]["labels"] if bundle["top"] is not None else None

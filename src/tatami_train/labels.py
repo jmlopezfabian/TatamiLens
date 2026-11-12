@@ -1,32 +1,12 @@
-"""Etiquetas de posición, alineadas con docs/CONTRACTS.md.
-
-TODO: cuando `tatami_vision.schema` esté disponible, reutilizar sus constantes y
-dejar este módulo como simple re-export (hoy se mantienen aquí para no depender de él).
-"""
+"""Etiquetas de posición: constantes tomadas de `tatami_vision.schema` (docs/CONTRACTS.md)."""
 
 from __future__ import annotations
 
-POSITIONS: tuple[str, ...] = (
-    "standing",
-    "scramble",
-    "closed_guard",
-    "half_guard",
-    "open_guard",
-    "side_control",
-    "north_south",
-    "knee_on_belly",
-    "mount",
-    "back_control",
-    "turtle",
-    "separated",
-    "not_visible",
-)
+from tatami_vision.schema import NEUTRAL_POSITIONS as NO_TOP_POSITIONS
+from tatami_vision.schema import POSITIONS, SOURCES
+from tatami_vision.schema import TOP_VALUES as TOPS
 
-TOPS: tuple[str, ...] = ("A", "B", "none")
-SOURCES: tuple[str, ...] = ("human", "vlm", "model")
-
-# Posiciones donde `top` es siempre "none".
-NO_TOP_POSITIONS: frozenset[str] = frozenset({"standing", "scramble", "separated", "not_visible"})
+__all__ = ["NO_TOP_POSITIONS", "POSITIONS", "SOURCES", "TOPS"]
 
 # Agrupaciones para accuracy "gruesa" (no son parte del contrato; sólo para evaluación).
 GROUPS: dict[str, tuple[str, ...]] = {

@@ -50,6 +50,7 @@ def test_full_pipeline(synthetic):
     out = ds / "export"
     meta = export_model(run, out, "logreg")
     assert meta["backbone"] == "fake/backbone" and meta["sample_fps"] == 2.0
+    assert meta["pooling"] == "cls+mean"
     assert json.loads((out / "meta.json").read_text())["labels"] == meta["labels"]
     model = LocalModel(out)
     preds = model.predict(X[:3])

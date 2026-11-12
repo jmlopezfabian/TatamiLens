@@ -94,17 +94,9 @@ no por cómo se ve en este frame). Por eso:
 
 ## Formato de export (para tatami-vision, backend `local`)
 
-```
-models/local-v1/
-  model.joblib   # dict: {"position": Pipeline, "top": Pipeline|None, "top_side": Pipeline|None}
-  meta.json      # {"format_version": 1, "backbone": "facebook/dinov2-small",
-                 #  "labels": [...13 posiciones, orden de classes_...], "top_labels": ["A","B","none"],
-                 #  "sample_fps": 2.0, "model_kind": "logreg", "created_at": "..."}
-```
-
-Cada Pipeline es `StandardScaler + clasificador` de scikit-learn con `predict_proba` y `classes_`. Entrada:
-el embedding del frame calculado con **el mismo backbone** que `meta.json["backbone"]` (para DINOv2: CLS
-concatenado con la media de parches, 768 dims; para CLIP, `get_image_features`).
+El formato del artefacto (`model.joblib` + `meta.json`) está definido una sola vez en
+`../docs/CONTRACTS.md`, sección "Artefacto de modelo local". `tatami-train export` lo produce y
+`tatami-vision` (backend `local`) lo carga.
 
 Uso desde tatami-vision (referencia: `tatami_train.export.LocalModel` y `tatami_train.embed.build_embedder`):
 
@@ -119,7 +111,7 @@ vec = embed([Image.open("frame.jpg").convert("RGB")])
 model.predict(vec)   # [{"position": "mount", "top": "none", "confidence": 0.83}]
 ```
 
-El backend `local` debería muestrear a `meta["sample_fps"]`, calcular embeddings por lotes y producir los
+El backend `local` muestrea a `meta["sample_fps"]`, calcular embeddings por lotes y producir los
 `frames` del `AnalysisResult`. Mismo loader con sólo `joblib` + `transformers` si se prefiere no depender de
 este paquete (las dependencias sklearn deben tener versión compatible con la usada al entrenar).
 

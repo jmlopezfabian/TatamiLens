@@ -21,6 +21,11 @@ def backbone_slug(backbone: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", backbone)
 
 
+def pooling_for(backbone: str) -> str:
+    """Pooling que aplica `build_embedder` (se escribe en meta.json para tatami-vision)."""
+    return "clip" if "clip" in backbone.lower() else "cls+mean"
+
+
 def pick_device() -> str:
     import torch
 
@@ -36,7 +41,7 @@ def build_embedder(backbone: str = DEFAULT_BACKBONE, device: str | None = None) 
 
     device = device or pick_device()
     processor = AutoImageProcessor.from_pretrained(backbone)
-    is_clip = "clip" in backbone.lower()
+    is_clip = pooling_for(backbone) == "clip"
     model = (CLIPModel if is_clip else AutoModel).from_pretrained(backbone).to(device).eval()
 
     @torch.inference_mode()
