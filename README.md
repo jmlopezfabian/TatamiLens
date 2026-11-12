@@ -45,3 +45,7 @@ inválidas (`top` debe ser `none` en standing/scramble/separated/not_visible).
   Si no está instalado, usa un mock interno determinista (sólo backend `mock`). Los tests corren contra el
   `mock` de tatami-vision (nunca ollama/anthropic).
 - **tatami-train**: descargar `labels/export` y usarlo como dataset por intervalos.
+
+## Licencia
+
+AGPL-3.0 (ver `LICENSE`). Usa/depende de Ultralytics YOLO, que es AGPL-3.0.
