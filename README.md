@@ -17,3 +17,8 @@ Contratos entre repos: [`docs/CONTRACTS.md`](docs/CONTRACTS.md).
 Inspirado en el paper *Video-Based Detection of Combat Positions and Automatic Scoring in
 Jiu-jitsu* (Hudovernik & Skočaj, MMSports 2022). No reutiliza su código (licencia CC BY-NC-ND).
 El prototipo inicial vive en `../bjj-scoring/`.
+
+## Licencias
+
+- `tatami-vision`, `tatami-train`, `tatami-api`: AGPL-3.0 (dependen de Ultralytics YOLO, AGPL-3.0).
+- `tatami-web` y este repo raíz: MIT.
