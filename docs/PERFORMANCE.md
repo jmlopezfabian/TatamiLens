@@ -53,7 +53,10 @@ Columnas: *top* es quién está arriba en frames con top etiquetado (entre paré
 trivial de decir siempre el atleta que más tiempo está arriba); *A/B dicho* es la fracción de esos
 frames en que el modelo dijo A o B en vez de una posición neutra; *baile* es, entre esos, la
 fracción con la identidad contraria a la mayoritaria. Los s/frame son de pared e incluyen la carga
-del modelo; el 0.20 del primer mosaico está falseado por la caché de prompts de Ollama.
+del modelo; el 0.20 del primer mosaico está falseado porque se ejecutó justo después de otras
+pruebas del mismo video con el mismo mosaico y Ollama reutilizó la caché de prompts (sin caché,
+~0.5). Las filas de 1 frame/imagen usan bloques de 6; con el prompt actual y contexto de 8192 el
+tope es de 5 frames por petición (`max_block_for_context`), así que su s/frame puede variar algo.
 
 | Variante | s/frame | Posición | F1 macro | Grupo | Top (base) | A/B dicho | Baile |
 |---|---|---|---|---|---|---|---|

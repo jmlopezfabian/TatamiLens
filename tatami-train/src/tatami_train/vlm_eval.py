@@ -39,13 +39,7 @@ def _pairs(result: dict, labels: LabelFile) -> list[tuple[dict, dict]]:
 def evaluate_analysis(result: dict, labels: LabelFile) -> dict[str, Any]:
     from sklearn.metrics import f1_score
 
-    duration = result.get("video", {}).get("duration_s")
-    last_end = max((i.end for i in labels.intervals), default=0.0)
-    if duration is not None and last_end > duration + 1.0:
-        raise ValueError(
-            f"las etiquetas llegan a {last_end:.1f} s y el video dura {duration:.1f} s: "
-            "¿resultado y etiquetas son del mismo video?"
-        )
+    _check_duration(labels, result.get("video", {}).get("duration_s"))
     pairs = _pairs(result, labels)
     if not pairs:
         raise ValueError("ningún frame del resultado cae dentro de un intervalo etiquetado")
@@ -95,6 +89,17 @@ def evaluate_analysis(result: dict, labels: LabelFile) -> dict[str, Any]:
     }
 
 
+def _check_duration(labels: LabelFile, duration: float | None) -> None:
+    """Las etiquetas no pueden acabar después del video (tolerancia 1 s). No detecta etiquetas más
+    cortas de otro video: los videos de la API se guardan por id y el nombre no sirve para cruzar."""
+    last_end = max((i.end for i in labels.intervals), default=0.0)
+    if duration is not None and last_end > duration + 1.0:
+        raise ValueError(
+            f"las etiquetas llegan a {last_end:.1f} s y el video dura {duration:.1f} s: "
+            "¿resultado y etiquetas son del mismo video?"
+        )
+
+
 def _recall(true: list[str], pred: list[str], name: str) -> float:
     idx = [i for i, t in enumerate(true) if t == name]
     return sum(pred[i] == name for i in idx) / len(idx)
@@ -127,7 +132,7 @@ def format_table(rows: list[dict[str, Any]]) -> str:
 def parse_variant(spec: str) -> tuple[str, dict[str, Any]]:
     """`nombre:clave=valor,clave=valor` -> (nombre, kwargs de analyze_video)."""
     name, sep, rest = spec.partition(":")
-    if not re.fullmatch(r"[\w.-]+", name) or (not sep and "=" in spec):
+    if not re.fullmatch(r"[\w.-]+", name) or name.lower() == "bench":
         raise ValueError(f"variante {spec!r}: se espera 'nombre:clave=valor,...' (nombre [\\w.-]+)")
     kwargs: dict[str, Any] = {}
     for item in filter(None, rest.split(",")):
@@ -159,12 +164,14 @@ def bench_vlm(
     `s_per_frame` es tiempo de pared e incluye la carga del modelo si no estaba en memoria: la
     primera variante de cada modelo sale penalizada."""
     from tatami_vision import analyze_video
+    from tatami_vision.video import read_metadata
 
     labels = load_label_file(labels_path)
     parsed = [parse_variant(s) for s in variants]  # validar todo antes de gastar minutos
-    names = [n for n, _ in parsed]
+    names = [n.lower() for n, _ in parsed]  # macOS no distingue mayúsculas en nombres de fichero
     if len(set(names)) != len(names):
         raise ValueError(f"nombres de variante repetidos: {names}")
+    _check_duration(labels, read_metadata(video).duration_s)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     rows = []

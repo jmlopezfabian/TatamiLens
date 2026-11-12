@@ -104,3 +104,46 @@ def test_bench_rejects_duplicate_names_before_running(tmp_path):
     save_label_file(LABELS, tmp_path / "l.json")
     with pytest.raises(ValueError, match="repetidos"):
         bench_vlm("v.mp4", tmp_path / "l.json", ["a:tile=1", "a:tile=4"], tmp_path / "out")
+
+
+def test_parse_variant_reserved_name():
+    with pytest.raises(ValueError):
+        parse_variant("bench:tile=4")
+
+
+def test_top_metrics_none_without_committed_top():
+    r = result([(0.0, "standing", "none"), (2.5, "scramble", "none"), (4.5, "scramble", "none")])
+    m = evaluate_analysis(r, LABELS)
+    assert m["top_acc"] == 0.0 and m["top_committed"] == 0.0
+    assert m["top_identity_acc"] is None and m["top_flip_rate"] is None
+    only_standing = LabelFile(video="v.mp4", intervals=[Interval(0.0, 2.0, "standing")])
+    m = evaluate_analysis(result([(0.5, "standing", "none")]), only_standing)
+    assert m["top_acc"] is None and m["top_committed"] is None and m["top_baseline"] is None
+
+
+def test_duration_tolerance():
+    ok = result([(0.0, "standing", "none")]) | {"video": {"duration_s": 5.0}}
+    assert evaluate_analysis(ok, LABELS)["n"] == 1  # etiquetas hasta 6.0 s: dentro de 1 s
+
+
+def test_bench_writes_partial_results(tmp_path, monkeypatch):
+    import tatami_vision
+    import tatami_vision.video as tv_video
+
+    from tatami_train.vlm_eval import bench_vlm
+
+    save_label_file(LABELS, tmp_path / "l.json")
+    monkeypatch.setattr(tv_video, "read_metadata", lambda p: type("V", (), {"duration_s": 6.0}))
+    calls = []
+
+    def fake_analyze(video, backend, **kw):
+        calls.append(kw)
+        if len(calls) == 2:
+            raise RuntimeError("ollama caído")
+        return result([(0.0, "standing", "none"), (2.5, "mount", "A")])
+
+    monkeypatch.setattr(tatami_vision, "analyze_video", fake_analyze)
+    with pytest.raises(RuntimeError):
+        bench_vlm("v.mp4", tmp_path / "l.json", ["a:tile=1", "b:tile=4"], tmp_path / "out")
+    rows = json.loads((tmp_path / "out" / "bench.json").read_text())
+    assert [r["name"] for r in rows] == ["a"]
