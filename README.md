@@ -74,10 +74,7 @@ si `source="human"`); los frames fuera de todo intervalo conservan su etiqueta.
 
 ### Formato del artefacto `local`
 
-- `model.joblib`: estimador scikit-learn con `predict_proba`; `classes_` son strings
-  `"<position>|<top>"` (p.ej. `"side_control|A"`, `"standing|none"`).
-- `meta.json`: `{"format_version": 1, "embedding": {"backend": "hf", "model": "facebook/dinov2-small",
-  "pooling": "cls", "image_size": 224}, "labels": "position|top"}`.
+Definido en `../docs/CONTRACTS.md` (sección "Artefacto de modelo local"); lo produce `tatami-train export`.
 
 Para añadir un backend: subclasea `PositionClassifier` (`backends/base.py`) y regístralo en
 `backends/__init__.py`.
