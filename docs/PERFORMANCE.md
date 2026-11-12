@@ -43,9 +43,30 @@ lineal. Todos los tiempos son de extremo a extremo salvo que se diga lo contrari
 
 ## Calidad
 
-Sin conjunto etiquetado, solo se comparó suelo/de pie frente a una referencia hecha a ojo:
-84–93 % en todas las variantes, sin pérdida clara por el mosaico. **El VLM de 8B clasifica mal
-las posiciones finas en todas las configuraciones** (casi todo sale `mount`) y la identidad A/B
-es inestable. Hace falta un conjunto de evaluación etiquetado para medirlo. La vía para mejorar
-calidad y velocidad a la vez es el backend `local` (DINOv2-small: 9 ms/frame) entrenado con
-`tatami-train`.
+Evaluación con `tatami-train bench-vlm` (ver `tatami_train/vlm_eval.py`) contra
+`tatami-train/eval/labels/insta2.json`. **Ojo:** son etiquetas preliminares hechas por Claude
+(`source: "model"`) sobre el único video disponible, no verificadas por una persona; sirven para
+comparar variantes, no como cifra absoluta. Hay bastante varianza entre ejecuciones (±10 puntos).
+
+| Variante | s/frame | Posición | F1 macro | Grupo | Top | Baile A/B |
+|---|---|---|---|---|---|---|
+| qwen3-vl instruct, mosaico, prompt antiguo | 0.5 | 11 % | – | 45 % | 65 % | 2 % |
+| qwen3-vl instruct, 1 frame/imagen, prompt antiguo | 1.70 | 2 % | – | 47 % | 94 % | 3 % |
+| qwen3-vl instruct, mosaico, prompt con definiciones visuales | 0.52 | 22 % | 0.11 | 33 % | 22 % | 19 % |
+| qwen3-vl instruct, 1 frame/imagen, prompt con definiciones visuales | 1.89 | 18 % | 0.12 | 46 % | 70 % | 27 % |
+| gemma4:e4b, mosaico | 0.46 | 28 % | 0.15 | 31 % | 14 % | 5 % |
+| gemma4:e4b, 1 frame/imagen | 0.61 | 11 % | 0.04 | 34 % | 71 % | 8 % |
+
+Conclusiones:
+
+- **Ningún VLM pequeño sirve para las posiciones finas.** Cada uno colapsa hacia una clase:
+  qwen3-vl hacia `mount` (frame suelto) o `scramble` (mosaico); gemma4 hacia `scramble` u
+  `open_guard`. Las guardias casi nunca se reconocen.
+- **El mosaico no empeora la posición** (incluso mejora) y es 3–4 veces más rápido, así que se
+  mantiene. Sí empeora "quién está arriba": el `top` alto sin mosaico es casi trivial (en este video
+  A está arriba casi todo el tiempo).
+- Las definiciones visuales del prompt mejoran la posición exacta (2–11 % → 18–22 %), pero no
+  lo bastante.
+- La vía razonable es el backend `local` (DINOv2-small: 9 ms/frame) entrenado con `tatami-train`
+  sobre etiquetas humanas, usando el VLM solo como pseudoetiquetador inicial. Para medir y entrenar
+  hacen falta más combates etiquetados a mano en la web.
