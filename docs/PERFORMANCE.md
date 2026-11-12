@@ -45,28 +45,38 @@ lineal. Todos los tiempos son de extremo a extremo salvo que se diga lo contrari
 
 Evaluación con `tatami-train bench-vlm` (ver `tatami_train/vlm_eval.py`) contra
 `tatami-train/eval/labels/insta2.json`. **Ojo:** son etiquetas preliminares hechas por Claude
-(`source: "model"`) sobre el único video disponible, no verificadas por una persona; sirven para
-comparar variantes, no como cifra absoluta. Hay bastante varianza entre ejecuciones (±10 puntos).
+(`source: "model"`) sobre el único video disponible (48 s, 96 frames), no verificadas por una
+persona. Sirven para comparar variantes a grandes rasgos, no como cifra absoluta: hay bastante
+varianza entre ejecuciones (±10 puntos), así que diferencias de ese orden son ruido.
 
-| Variante | s/frame | Posición | F1 macro | Grupo | Top | Baile A/B |
-|---|---|---|---|---|---|---|
-| qwen3-vl instruct, mosaico, prompt antiguo | 0.5 | 11 % | – | 45 % | 65 % | 2 % |
-| qwen3-vl instruct, 1 frame/imagen, prompt antiguo | 1.70 | 2 % | – | 47 % | 94 % | 3 % |
-| qwen3-vl instruct, mosaico, prompt con definiciones visuales | 0.52 | 22 % | 0.11 | 33 % | 22 % | 19 % |
-| qwen3-vl instruct, 1 frame/imagen, prompt con definiciones visuales | 1.89 | 18 % | 0.12 | 46 % | 70 % | 27 % |
-| gemma4:e4b, mosaico | 0.46 | 28 % | 0.15 | 31 % | 14 % | 5 % |
-| gemma4:e4b, 1 frame/imagen | 0.61 | 11 % | 0.04 | 34 % | 71 % | 8 % |
+Columnas: *top* es quién está arriba en frames con top etiquetado (entre paréntesis, la referencia
+trivial de decir siempre el atleta que más tiempo está arriba); *A/B dicho* es la fracción de esos
+frames en que el modelo dijo A o B en vez de una posición neutra; *baile* es, entre esos, la
+fracción con la identidad contraria a la mayoritaria. Los s/frame son de pared e incluyen la carga
+del modelo; el 0.20 del primer mosaico está falseado por la caché de prompts de Ollama.
+
+| Variante | s/frame | Posición | F1 macro | Grupo | Top (base) | A/B dicho | Baile |
+|---|---|---|---|---|---|---|---|
+| qwen3-vl, mosaico, prompt antiguo | 0.20* | 11 % | 0.06 | 45 % | 65 % (97 %) | 67 % | 2 % |
+| qwen3-vl, 1 frame/imagen, prompt antiguo | 1.70 | 2 % | 0.01 | 47 % | 94 % (97 %) | 97 % | 3 % |
+| qwen3-vl, mosaico, prompt con definiciones | 0.52 | 22 % | 0.11 | 33 % | 22 % (97 %) | 41 % | 46 % |
+| qwen3-vl, 1 frame/imagen, prompt con definiciones | 1.89 | 18 % | 0.12 | 46 % | 70 % (97 %) | 97 % | 28 % |
+| gemma4:e4b, mosaico | 0.46 | 28 % | 0.15 | 31 % | 14 % (97 %) | 19 % | 25 % |
+| gemma4:e4b, 1 frame/imagen | 0.61 | 11 % | 0.04 | 34 % | 71 % (97 %) | 79 % | 10 % |
 
 Conclusiones:
 
-- **Ningún VLM pequeño sirve para las posiciones finas.** Cada uno colapsa hacia una clase:
-  qwen3-vl hacia `mount` (frame suelto) o `scramble` (mosaico); gemma4 hacia `scramble` u
-  `open_guard`. Las guardias casi nunca se reconocen.
-- **El mosaico no empeora la posición** (incluso mejora) y es 3–4 veces más rápido, así que se
-  mantiene. Sí empeora "quién está arriba": el `top` alto sin mosaico es casi trivial (en este video
-  A está arriba casi todo el tiempo).
-- Las definiciones visuales del prompt mejoran la posición exacta (2–11 % → 18–22 %), pero no
-  lo bastante.
+- **Ningún VLM pequeño sirve para las posiciones finas ni para quién está arriba.** Cada uno
+  colapsa hacia una o dos clases: qwen3-vl hacia `mount` (frame suelto, prompt antiguo) o
+  `scramble` (mosaico, prompt nuevo); gemma4 hacia `scramble` u `open_guard`. Las guardias casi
+  nunca se reconocen y ninguna variante supera la referencia trivial de *top*.
+- **El prompt con definiciones visuales es un cambio mixto.** Corrige el sesgo hacia `mount` y sube
+  la posición exacta y el F1 macro, pero en el mosaico desplaza el error hacia `scramble`: baja el
+  grupo (45 → 33 %) y el modelo deja de decir quién está arriba en la mayoría de frames. Se mantiene
+  porque el F1 macro mejora en las dos configuraciones, pero la evidencia es débil.
+- **El mosaico se mantiene por velocidad** (3–4 veces más rápido con qwen3-vl; con gemma4, 1.3
+  veces). En posición no hay diferencia clara frente a un frame por imagen; en *top* es peor, sobre
+  todo porque más frames salen como posiciones neutras sin A/B.
 - La vía razonable es el backend `local` (DINOv2-small: 9 ms/frame) entrenado con `tatami-train`
-  sobre etiquetas humanas, usando el VLM solo como pseudoetiquetador inicial. Para medir y entrenar
-  hacen falta más combates etiquetados a mano en la web.
+  sobre etiquetas humanas, usando el VLM como mucho como pseudoetiquetador inicial. Para medir y
+  entrenar hacen falta más combates etiquetados a mano en la web.

@@ -71,3 +71,36 @@ def test_eval_analysis_cli(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "| run |" in out and "100%" in out
     assert format_table([]).count("\n") == 1
+
+
+def test_parse_variant_validation():
+    assert parse_variant("x:crop=False,smooth=TRUE") == ("x", {"crop": False, "smooth": True})
+    assert parse_variant("g:model=gemma4:e4b") == ("g", {"model": "gemma4:e4b"})
+    for bad in ["model=gemma4:e4b", "tile=4", ":tile=4", "a/b:tile=4", "x:tile", "x:=4", "x:tile="]:
+        with pytest.raises(ValueError):
+            parse_variant(bad)
+
+
+def test_top_none_counts_as_uncommitted_not_flip():
+    labels = LabelFile(video="v.mp4", intervals=[Interval(0.0, 4.0, "mount", "A")])
+    r = result(
+        [(0.0, "scramble", "none"), (1.0, "mount", "A"), (2.0, "mount", "A"), (3.0, "mount", "B")]
+    )
+    m = evaluate_analysis(r, labels)
+    assert m["top_acc"] == 0.5 and m["top_committed"] == 0.75
+    assert m["top_identity_acc"] == 2 / 3 and m["top_flip_rate"] == 1 / 3
+    assert m["top_baseline"] == 1.0
+
+
+def test_rejects_labels_longer_than_video():
+    r = result([(0.0, "standing", "none")]) | {"video": {"duration_s": 2.0}}
+    with pytest.raises(ValueError, match="mismo video"):
+        evaluate_analysis(r, LABELS)
+
+
+def test_bench_rejects_duplicate_names_before_running(tmp_path):
+    from tatami_train.vlm_eval import bench_vlm
+
+    save_label_file(LABELS, tmp_path / "l.json")
+    with pytest.raises(ValueError, match="repetidos"):
+        bench_vlm("v.mp4", tmp_path / "l.json", ["a:tile=1", "a:tile=4"], tmp_path / "out")
