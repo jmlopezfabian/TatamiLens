@@ -36,6 +36,12 @@ from .base import (
 log = logging.getLogger(__name__)
 
 
+def _is_client_error(e: Exception) -> bool:
+    """Error 4xx de Ollama (modelo inexistente, petición inválida), salvo 408/429."""
+    status = getattr(e, "status_code", None)
+    return isinstance(status, int) and 400 <= status < 500 and status not in (408, 429)
+
+
 def _disable_banner() -> None:
     import pydantic_ai
 
@@ -280,6 +286,8 @@ class OllamaClassifier(PositionClassifier):
                 last_err = e
                 break
             except Exception as e:
+                if _is_client_error(e):  # p.ej. 404: modelo no instalado; reintentar no sirve
+                    raise RuntimeError(f"Ollama rechazó la petición ({self.model}): {e}") from e
                 last_err = e
                 log.warning("Ollama: bloque t=%s falló (intento %d): %s", frames[0].t, attempt + 1, e)
         log.error("Ollama: bloque t=%s descartado: %s", frames[0].t, last_err)

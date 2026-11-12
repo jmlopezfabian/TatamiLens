@@ -65,6 +65,8 @@ def ollama_native_model(
     `think=False` se envía siempre (los modelos híbridos lo respetan; las variantes Thinking como
     `qwen3-vl:8b` lo ignoran y el backend lo detecta por `ThinkingPart`)."""
 
+    think_supported = think is not None
+
     def chat(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         settings: dict = dict(info.model_settings or {})
         params = info.model_request_parameters
@@ -80,11 +82,16 @@ def ollama_native_model(
             options=options,
             keep_alive=keep_alive,
         )
-        try:
-            resp = client.chat(think=think, **kwargs)
-        except Exception as e:  # modelos sin soporte de razonamiento rechazan `think`
-            if think is None or "think" not in str(e).lower():
-                raise
+        nonlocal think_supported
+        if think_supported:
+            try:
+                resp = client.chat(think=think, **kwargs)
+            except Exception as e:  # modelos sin soporte de razonamiento rechazan `think`
+                if "think" not in str(e).lower():
+                    raise
+                think_supported = False  # no repetir la petición fallida en cada bloque
+                resp = client.chat(**kwargs)
+        else:
             resp = client.chat(**kwargs)
         message = resp["message"] if isinstance(resp, dict) else resp.message
         get = message.get if isinstance(message, dict) else lambda k: getattr(message, k, None)

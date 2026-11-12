@@ -188,6 +188,40 @@ def test_ollama_think_false_sent_and_fallback_when_unsupported():
     assert res.labels[0]["position"] == "standing" and "think" not in cl2.kwargs[-1]
 
 
+def test_ollama_think_unsupported_remembered():
+    class NoThink(FakeClient):
+        def chat(self, **kw):
+            if "think" in kw:
+                self.kwargs.append(kw)
+                raise RuntimeError('"model" does not support thinking')
+            return super().chat(**kw)
+
+    cl = NoThink([codes_reply(["standing"]), codes_reply(["standing"], athletes=False)])
+    c = OllamaClassifier(client=cl)
+    c.classify_block(frames(1))
+    c.classify_block(frames(1), athletes={"A": "a", "B": "b"})
+    assert sum("think" in kw for kw in cl.kwargs) == 1
+
+
+class _ResponseError(Exception):
+    def __init__(self, error, status_code):
+        super().__init__(error)
+        self.status_code = status_code
+
+
+def test_ollama_client_error_fails_fast():
+    cl = FakeClient([_ResponseError("model 'x' not found", 404)])
+    with pytest.raises(RuntimeError, match="not found"):
+        OllamaClassifier(client=cl, retries=2).classify_block(frames(1))
+    assert cl.calls == 1
+
+
+def test_ollama_server_error_retried():
+    cl = FakeClient([_ResponseError("busy", 503), codes_reply(["standing"])])
+    res = OllamaClassifier(client=cl, retries=1).classify_block(frames(1))
+    assert cl.calls == 2 and res.labels[0]["position"] == "standing"
+
+
 def test_ollama_context_options(monkeypatch):
     assert OllamaClassifier(client=FakeClient([]), num_ctx=16384).context_tokens == 16384
     monkeypatch.setenv("TATAMI_OLLAMA_CONTEXT", "12000")
