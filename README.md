@@ -70,3 +70,7 @@ src/
 - Tema claro/oscuro: sigue el sistema y se puede cambiar con el botón (se guarda en localStorage).
 - Los nombres de atletas se guardan en el navegador; las descripciones A/B van en las etiquetas (`PUT /labels`).
 - "Recalcular marcador" guarda las etiquetas pendientes y luego llama `POST /api/analyses/{id}/rescore`.
+
+## Licencia
+
+MIT (ver `LICENSE`).
