@@ -1,11 +1,11 @@
 # TatamiLens — contratos compartidos
 
-Este documento es la fuente de verdad entre repos. Si un repo necesita cambiar algo aquí,
+Este documento es la fuente de verdad entre paquetes. Si un paquete necesita cambiar algo aquí,
 debe hacerse primero en este archivo.
 
-## Repos
+## Paquetes (carpetas del monorepo)
 
-| Repo | Qué es | Stack |
+| Carpeta | Qué es | Stack |
 |---|---|---|
 | `tatami-vision/` | Librería + CLI de visión para BJJ: muestreo de video, pose/tracking, clasificación de posiciones (backends intercambiables), motor de puntuación IBJJF. Produce `AnalysisResult`. | Python 3.12, uv, ultralytics, opencv, ollama, anthropic (opcional) |
 | `tatami-train/` | Datasets y entrenamiento: formato de etiquetas por intervalos, extracción de frames, pseudo-etiquetado con VLM, embeddings (DINOv2/CLIP), entrenamiento de clasificador local, evaluación. Exporta modelos que `tatami-vision` carga con el backend `local`. | Python 3.12, uv, torch (MPS), transformers, scikit-learn |

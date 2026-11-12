@@ -3,22 +3,44 @@
 Análisis automático de combates de jiu-jitsu a partir de video: detección de posiciones,
 línea de tiempo del combate y marcador con reglas IBJJF.
 
-## Repos
+## Estructura
 
-- [`tatami-vision`](https://github.com/jmlopezfabian/tatami-vision) — librería y CLI de visión computacional para BJJ
-- [`tatami-train`](https://github.com/jmlopezfabian/tatami-train) — datasets, etiquetado y entrenamiento de clasificadores
-- [`tatami-api`](https://github.com/jmlopezfabian/tatami-api) — backend FastAPI
-- [`tatami-web`](https://github.com/jmlopezfabian/tatami-web) — frontend React
+| Carpeta | Qué es |
+|---|---|
+| [`tatami-vision/`](tatami-vision) | Librería y CLI de visión para BJJ: clasificación de posiciones con VLM (Qwen3-VL local por defecto), recorte de la zona de combate con YOLO-pose, suavizado temporal y marcador IBJJF. |
+| [`tatami-train/`](tatami-train) | Datasets, etiquetado y entrenamiento de un clasificador local (embeddings DINOv2/CLIP + sklearn). |
+| [`tatami-api/`](tatami-api) | Backend FastAPI: videos, cola de análisis, correcciones de etiquetas. |
+| [`tatami-web/`](tatami-web) | Frontend React: biblioteca, reproductor con línea de tiempo, marcador y editor de etiquetas. |
+| [`docs/CONTRACTS.md`](docs/CONTRACTS.md) | Contratos entre paquetes (etiquetas, formato de resultados, API, modelo local). |
 
-Contratos entre repos: [`docs/CONTRACTS.md`](docs/CONTRACTS.md).
+`tatami-api` y `tatami-train` dependen de `tatami-vision` por ruta (`../tatami-vision`).
+
+## Arranque rápido
+
+Requisitos: macOS/Linux, Python 3.12 + [uv](https://docs.astral.sh/uv/), Node 20+,
+[Ollama](https://ollama.com) con `ollama pull qwen3-vl:8b`.
+
+```bash
+# API (puerto 8000)
+cd tatami-api && uv run tatami-api
+
+# Web (puerto 5173), en otra terminal
+cd tatami-web && npm install && npm run dev
+```
+
+Abre http://localhost:5173, sube un video y lanza un análisis.
+Solo la librería, desde la terminal:
+
+```bash
+cd tatami-vision && uv run tatami analyze VIDEO.mp4 --backend ollama --render
+```
 
 ## Origen
 
 Inspirado en el paper *Video-Based Detection of Combat Positions and Automatic Scoring in
 Jiu-jitsu* (Hudovernik & Skočaj, MMSports 2022). No reutiliza su código (licencia CC BY-NC-ND).
-Para desarrollo local, clona los cuatro repos dentro de esta carpeta (están en `.gitignore`).
 
-## Licencias
+## Licencia
 
-- `tatami-vision`, `tatami-train`, `tatami-api`: AGPL-3.0 (dependen de Ultralytics YOLO, AGPL-3.0).
-- `tatami-web` y este repo raíz: MIT.
+AGPL-3.0 (ver `LICENSE`), porque `tatami-vision` usa Ultralytics YOLO (AGPL-3.0).
+`tatami-web/` se distribuye bajo MIT (ver `tatami-web/LICENSE`).
