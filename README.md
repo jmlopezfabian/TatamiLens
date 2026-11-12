@@ -5,10 +5,10 @@ línea de tiempo del combate y marcador con reglas IBJJF.
 
 ## Repos
 
-- [`tatami-vision/`](tatami-vision) — librería y CLI de visión computacional para BJJ
-- [`tatami-train/`](tatami-train) — datasets, etiquetado y entrenamiento de clasificadores
-- [`tatami-api/`](tatami-api) — backend FastAPI
-- [`tatami-web/`](tatami-web) — frontend React
+- [`tatami-vision`](https://github.com/jmlopezfabian/tatami-vision) — librería y CLI de visión computacional para BJJ
+- [`tatami-train`](https://github.com/jmlopezfabian/tatami-train) — datasets, etiquetado y entrenamiento de clasificadores
+- [`tatami-api`](https://github.com/jmlopezfabian/tatami-api) — backend FastAPI
+- [`tatami-web`](https://github.com/jmlopezfabian/tatami-web) — frontend React
 
 Contratos entre repos: [`docs/CONTRACTS.md`](docs/CONTRACTS.md).
 
@@ -16,7 +16,7 @@ Contratos entre repos: [`docs/CONTRACTS.md`](docs/CONTRACTS.md).
 
 Inspirado en el paper *Video-Based Detection of Combat Positions and Automatic Scoring in
 Jiu-jitsu* (Hudovernik & Skočaj, MMSports 2022). No reutiliza su código (licencia CC BY-NC-ND).
-El prototipo inicial vive en `../bjj-scoring/`.
+Para desarrollo local, clona los cuatro repos dentro de esta carpeta (están en `.gitignore`).
 
 ## Licencias
 
