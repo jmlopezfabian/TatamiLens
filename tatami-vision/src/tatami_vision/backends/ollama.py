@@ -61,7 +61,7 @@ Code = Literal[CODES]  # type: ignore[valid-type]
 CODE_CONFIDENCE = 0.7  # la salida compacta no trae confianza; constante para el suavizado
 
 TOKENS_PER_IMAGE = 1100  # cota superior medida (~500 nativo, ~1040 por /v1) para dimensionar
-PROMPT_OVERHEAD_TOKENS = 900  # instrucciones + contexto del bloque anterior
+PROMPT_OVERHEAD_TOKENS = 1300  # instrucciones (~870) + contexto del bloque anterior
 OUTPUT_TOKENS_PER_FRAME = 12
 OUTPUT_OVERHEAD_TOKENS = 150  # llaves y comillas del JSON
 ATHLETE_DESC_CHARS = 200  # límite por descripción (primer bloque)
