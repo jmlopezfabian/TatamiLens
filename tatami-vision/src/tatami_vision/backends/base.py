@@ -24,9 +24,29 @@ For EVERY frame you receive, label the position between the two competitors:
     standing, scramble, separated, not_visible: "none".
 - confidence: low, medium or high.
 
-Label meanings: standing = both on their feet; scramble = transition with no clear position;
-open_guard includes butterfly, DLR, seated guard; separated = apart / restart / out of the area;
-not_visible = competitors hidden or out of frame.
+How to recognise each label (look at the BOTTOM athlete first: on their back, seated, or on
+knees and elbows face down?):
+- standing: both competitors on their feet (grip fighting, clinch, takedown attempts).
+- scramble: rolling or transitioning, no position held; also very blurry action frames.
+- closed_guard: bottom athlete on their back with legs wrapped/locked around the other's waist
+  (or around head and arm, e.g. a triangle attempt); the other kneels or postures between the legs.
+- half_guard: bottom athlete traps ONE leg of the other between their legs.
+- open_guard: bottom athlete seated or on their back facing the other, using feet, knees or hooks
+  without locking the legs; the other stands or kneels in front trying to pass. A competitor
+  sitting on the mat while the other stands in front is open_guard.
+- side_control: bottom athlete flat on their back; the other lies chest-to-chest across them,
+  roughly perpendicular, outside their legs.
+- north_south: like side_control but head-to-feet, chest on chest.
+- knee_on_belly: one knee of the top athlete on the bottom athlete's torso, other leg posted.
+- mount: the top athlete SITS on the torso of a bottom athlete who lies flat on their back,
+  one knee on each side. Mount is rare: never use it when the bottom athlete is face down, on
+  their knees, seated, or has their legs around the other.
+- back_control: one athlete is behind the other, chest to back, usually with legs hooked in front
+  of the hips or a body triangle (sitting or lying).
+- turtle: bottom athlete on knees and elbows, face down and curled up; the other is on top of or
+  beside them attacking (front headlock, sprawl, trying to take the back).
+- separated: competitors apart (restart, out of bounds, after the end).
+- not_visible: competitors hidden (by the referee, people, camera) or out of frame.
 
 Identity: athlete A and athlete B must stay consistent across all frames. Use whatever
 distinguishes them (shorts, rashguard, tattoos, hair, build, skin tone, shoes/socks) and

@@ -62,6 +62,23 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--model", default="qwen3-vl:8b-instruct")
     s.add_argument("--sample-fps", type=float, default=2.0)
     s.add_argument("--from-result", default=None, help="AnalysisResult JSON ya generado")
+
+    s = sub.add_parser("eval-analysis", help="evalúa AnalysisResult(s) contra etiquetas")
+    s.add_argument("results", nargs="+", help="result.json de tatami-vision")
+    s.add_argument("--labels", required=True, help="etiquetas por intervalos del mismo video")
+    s.add_argument("--json", action="store_true", help="métricas completas en JSON")
+
+    s = sub.add_parser("bench-vlm", help="compara variantes de análisis VLM contra etiquetas")
+    s.add_argument("video")
+    s.add_argument("--labels", required=True)
+    s.add_argument(
+        "--variant",
+        action="append",
+        required=True,
+        help="nombre:clave=valor,... (kwargs de analyze_video), p.ej. mosaico:tile=4",
+    )
+    s.add_argument("--out", required=True, help="directorio para resultados y bench.json")
+    s.add_argument("--backend", default="ollama")
     return p
 
 
@@ -121,6 +138,27 @@ def main(argv: list[str] | None = None) -> int:
             args.video, args.out, args.backend, args.model, args.sample_fps, args.from_result
         )
         print(f"{len(lf.intervals)} intervalos (source=vlm) para {lf.video}")
+    elif args.cmd == "eval-analysis":
+        from pathlib import Path
+
+        from .intervals import load_label_file
+        from .vlm_eval import evaluate_analysis, format_table
+
+        labels = load_label_file(args.labels)
+        rows = [
+            {
+                "name": Path(r).stem,
+                "metrics": evaluate_analysis(json.loads(Path(r).read_text()), labels),
+            }
+            for r in args.results
+        ]
+        print(json.dumps(rows, indent=2) if args.json else format_table(rows))
+    elif args.cmd == "bench-vlm":
+        from .vlm_eval import bench_vlm, format_table
+
+        print(
+            format_table(bench_vlm(args.video, args.labels, args.variant, args.out, args.backend))
+        )
     return 0
 
 
