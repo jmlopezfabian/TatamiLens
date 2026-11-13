@@ -46,7 +46,7 @@ Lo produce `tatami-vision`, lo guarda/sirve `tatami-api`, lo consume `tatami-web
 {
   "schema_version": "1",
   "video": {"path": "insta2.mp4", "fps": 29.97, "duration_s": 47.8, "width": 1280, "height": 720},
-  "backend": {"name": "ollama", "model": "qwen3-vl:8b", "sample_fps": 2.0},
+  "backend": {"name": "ollama", "model": "qwen3-vl:8b-instruct", "sample_fps": 2.0},
   "athletes": {"A": {"label": "Atleta A", "description": "..."}, "B": {"label": "Atleta B", "description": "..."}},
   "frames": [
     {"t": 0.0, "position": "standing", "top": "none", "confidence": 0.9}
@@ -115,14 +115,14 @@ está soportado, `tatami-vision` falla con un error claro. Versión actual: 1.
 | GET | `/api/videos/{id}` | `Video` |
 | GET | `/api/videos/{id}/stream` | archivo de video (soporta Range) |
 | DELETE | `/api/videos/{id}` | borra video y análisis (204) |
-| POST | `/api/videos/{id}/analyses` | body `{"backend":"ollama","model":"qwen3-vl:8b","sample_fps":2.0}` → `Analysis` (201, status `queued`) |
+| POST | `/api/videos/{id}/analyses` | body `{"backend":"ollama","model":"qwen3-vl:8b-instruct","sample_fps":2.0}` → `Analysis` (201, status `queued`) |
 | GET | `/api/analyses/{id}` | `Analysis` (incluye `result: AnalysisResult` cuando `status=done`) |
 | GET | `/api/videos/{id}/analyses` | lista de `Analysis` (incluye `result` si `done`) |
 | PUT | `/api/videos/{id}/labels` | guarda etiquetas corregidas (formato dataset) → devuelve las etiquetas guardadas |
 | GET | `/api/videos/{id}/labels` | etiquetas corregidas o 404 |
 | GET | `/api/videos/{id}/labels/export` | descarga del JSON de etiquetas (para `tatami-train`) |
 | POST | `/api/analyses/{id}/rescore` | recalcula `events`/`score` a partir de las etiquetas corregidas → `AnalysisResult` (sobrescribe el resultado guardado). 404 si el video no tiene etiquetas; 409 si el análisis no está `done` |
-| GET | `/api/backends` | backends disponibles y modelos: `[{"name":"ollama","models":["qwen3-vl:8b"],"available":true}, ...]` |
+| GET | `/api/backends` | backends disponibles y modelos: `[{"name":"ollama","models":["qwen3-vl:8b-instruct"],"available":true}, ...]` |
 
 ```ts
 Video    = { id: string, filename: string, duration_s: number|null, fps: number|null, created_at: string }
@@ -139,7 +139,7 @@ CORS habilitado para `http://localhost:5173` (Vite).
 
 ```python
 from tatami_vision import analyze_video, rescore, list_backends
-result: dict = analyze_video(path, backend="ollama", model="qwen3-vl:8b", sample_fps=2.0,
+result: dict = analyze_video(path, backend="ollama", model="qwen3-vl:8b-instruct", sample_fps=2.0,
                              progress_cb=lambda p: ...)   # p: float 0–1; devuelve AnalysisResult (dict)
 result = rescore(result, intervals)   # recalcula segments/events/score con etiquetas corregidas
 backends: list[dict] = list_backends()

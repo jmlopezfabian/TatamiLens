@@ -59,7 +59,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("video", nargs="?")
     s.add_argument("--out", required=True, help="directorio de salida de etiquetas")
     s.add_argument("--backend", default="ollama")
-    s.add_argument("--model", default="qwen3-vl:8b")
+    s.add_argument("--model", default="qwen3-vl:8b-instruct")
     s.add_argument("--sample-fps", type=float, default=2.0)
     s.add_argument("--from-result", default=None, help="AnalysisResult JSON ya generado")
     return p

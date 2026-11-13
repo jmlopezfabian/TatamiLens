@@ -135,7 +135,7 @@ export function createMockApi(): TatamiApi {
       await delay(60)
       return [
         { name: 'mock', models: ['mock-1'], available: true },
-        { name: 'ollama', models: ['qwen3-vl:8b', 'llama3.2-vision:11b'], available: true },
+        { name: 'ollama', models: ['qwen3-vl:8b-instruct', 'llama3.2-vision:11b'], available: true },
         { name: 'local', models: ['dinov2-logreg'], available: true },
         { name: 'anthropic', models: ['claude-sonnet-5-5'], available: false },
       ]

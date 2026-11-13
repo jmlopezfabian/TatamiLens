@@ -25,7 +25,7 @@ uv run pytest -m slow    # además prueba el backbone real (descarga DINOv2 de H
 
 ```bash
 # 1. Pseudo-etiquetar con un VLM (requiere tatami-vision; o usa --from-result con un AnalysisResult JSON)
-uv run tatami-train pseudolabel videos/combate1.mp4 --out labels/ --backend ollama --model qwen3-vl:8b
+uv run tatami-train pseudolabel videos/combate1.mp4 --out labels/ --backend ollama --model qwen3-vl:8b-instruct
 uv run tatami-train pseudolabel --from-result analysis.json --out labels/
 
 # 2. Corregir a mano los JSON de labels/ (o desde tatami-web / GET /api/videos/{id}/labels/export).

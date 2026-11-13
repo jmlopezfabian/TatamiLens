@@ -79,3 +79,33 @@ def encode_jpeg(img: np.ndarray, width: int | None = 960, quality: int = 85) -> 
 
 def encode_jpeg_b64(img: np.ndarray, width: int | None = 960, quality: int = 85) -> str:
     return base64.standard_b64encode(encode_jpeg(img, width, quality)).decode()
+
+
+def tile_frames(
+    images: list[np.ndarray], cols: int = 2, cell_size: tuple[int, int] = (640, 360)
+) -> np.ndarray:
+    """Une varios frames en un mosaico (filas de `cols`, izquierda→derecha, arriba→abajo).
+
+    Todas las celdas miden `cell_size` (ancho, alto): cada frame se escala para caber conservando
+    la proporción y se centra sobre negro, así que el mosaico tiene tamaño fijo aunque el video sea
+    vertical o los recortes cambien de forma. Cada celda lleva su número (1..n) en la esquina
+    superior izquierda; las sobrantes quedan en negro. Un mosaico 2x2 de 640x360 cuesta lo mismo
+    que un frame suelto en un VLM con resolución mínima (Qwen3-VL en Ollama).
+    """
+    if not images:
+        raise ValueError("tile_frames necesita al menos una imagen")
+    cw, ch = cell_size
+    rows = -(-len(images) // cols)
+    canvas = np.zeros((rows * ch, cols * cw, 3), np.uint8)
+    for k, img in enumerate(images):
+        h, w = img.shape[:2]
+        scale = min(cw / w, ch / h)
+        nw, nh = max(1, round(w * scale)), max(1, round(h * scale))
+        cell = np.zeros((ch, cw, 3), np.uint8)
+        x0, y0 = (cw - nw) // 2, (ch - nh) // 2
+        cell[y0 : y0 + nh, x0 : x0 + nw] = cv2.resize(img, (nw, nh), interpolation=cv2.INTER_AREA)
+        cv2.rectangle(cell, (0, 0), (60, 44), (0, 0, 0), -1)
+        cv2.putText(cell, str(k + 1), (12, 36), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 3)
+        r, c = divmod(k, cols)
+        canvas[r * ch : (r + 1) * ch, c * cw : (c + 1) * cw] = cell
+    return canvas

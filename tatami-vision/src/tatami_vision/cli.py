@@ -12,6 +12,13 @@ from .api import analyze_video, list_backends
 from .render import render_video
 from .schema import analysis_result_json_schema, label_file_json_schema
 
+
+def _check_tile(v: int | None) -> int | None:
+    if v is not None and v not in (1, 2, 4):
+        raise typer.BadParameter("debe ser 1, 2 o 4")
+    return v
+
+
 app = typer.Typer(help="TatamiLens: análisis de videos de BJJ.", no_args_is_help=True)
 
 
@@ -27,6 +34,11 @@ def analyze(
     smooth: bool = typer.Option(True, "--smooth/--no-smooth"),
     block_size: int | None = typer.Option(None, help="Frames por request al backend"),
     pose_model: str = typer.Option("yolo11m-pose.pt", help="Pesos YOLO-pose para --crop"),
+    tile: int | None = typer.Option(
+        None,
+        help="ollama: frames por imagen (4 = mosaico 2x2, default; 2; 1 = sin mosaico)",
+        callback=lambda v: _check_tile(v),
+    ),
     verbose: bool = typer.Option(False, "-v"),
 ) -> None:
     """Analiza VIDEO y guarda result.json (y opcionalmente labeled.mp4)."""
@@ -37,9 +49,10 @@ def analyze(
     def progress(p: float) -> None:
         typer.echo(f"\rProgreso: {p * 100:5.1f}%", nl=False, err=True)
 
+    extra = {"tile": tile} if tile is not None else {}
     result = analyze_video(
         video, backend=backend, model=model, sample_fps=fps, progress_cb=progress,
-        crop=crop, smooth=smooth, block_size=block_size, pose_model=pose_model,
+        crop=crop, smooth=smooth, block_size=block_size, pose_model=pose_model, **extra,
     )  # fmt: skip
     typer.echo("", err=True)
     (out / "result.json").write_text(json.dumps(result, indent=2, ensure_ascii=False))

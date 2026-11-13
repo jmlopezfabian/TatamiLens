@@ -164,7 +164,7 @@ def _mock_rescore(result: dict, intervals: list[dict]) -> dict:
     return new
 
 
-def analyze_video(path, backend="ollama", model="qwen3-vl:8b", sample_fps=2.0,
+def analyze_video(path, backend="ollama", model="qwen3-vl:8b-instruct", sample_fps=2.0,
                   progress_cb: Callable[[float], None] | None = None) -> dict:  # fmt: skip
     if _tv is not None:
         return _tv.analyze_video(str(path), backend=backend, model=model, sample_fps=sample_fps,
@@ -183,7 +183,7 @@ def list_backends() -> list[dict]:
         return _tv.list_backends()
     return [
         {"name": "mock", "models": ["mock"], "available": True},
-        {"name": "ollama", "models": ["qwen3-vl:8b"], "available": False},
+        {"name": "ollama", "models": ["qwen3-vl:8b-instruct"], "available": False},
         {"name": "anthropic", "models": [], "available": False},
         {"name": "local", "models": [], "available": False},
     ]

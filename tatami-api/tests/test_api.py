@@ -135,7 +135,7 @@ def test_backends_propagate_extra_fields(client):
     if vision.USING_REAL_VISION:
         assert set(items) == {"ollama", "anthropic", "local", "mock"}
         assert "default_model" in items["mock"] and "detail" in items["mock"]
-        assert items["ollama"]["default_model"] == "qwen3-vl:8b"
+        assert items["ollama"]["default_model"] == "qwen3-vl:8b-instruct"
 
 
 def test_rescore_with_real_or_fallback(client, video):

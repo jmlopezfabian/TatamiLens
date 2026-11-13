@@ -83,7 +83,7 @@ class AnalysisResult(_Loose):
 
 class AnalysisCreate(BaseModel):
     backend: str = "ollama"
-    model: str = "qwen3-vl:8b"
+    model: str = "qwen3-vl:8b-instruct"
     sample_fps: float = Field(default=2.0, gt=0, le=30)
 
 
